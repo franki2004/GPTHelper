@@ -1,0 +1,49 @@
+{
+    "manifest_version": 3,
+    "name": "ChatGPT Question Helper",
+    "version": "1.0",
+    "description": "Select webpage text and ask ChatGPT for help",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://api.openai.com/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "GPTHelp16.png",
+            "48": "GPTHelp48.png",
+            "128": "GPTHelp128.png"
+        }
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js",
+                "tesseract.min.js"
+            ],
+            "css": [
+                "style.css"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "tesseract.min.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}

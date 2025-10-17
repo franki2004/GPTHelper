@@ -1,0 +1,78 @@
+.popup {
+    font-family: sans-serif;
+    width: 280px;
+    padding: 12px;
+    background: #111;
+    color: #fff;
+    margin: 0;
+}
+
+.popup .tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}
+
+.popup .tabs button {
+    flex: 1;
+    padding: 8px;
+    background: #222;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.popup .tabs button.active {
+    background: #007bff;
+}
+
+.popup .section {
+    display: block;
+}
+
+.popup .section.hidden {
+    display: none;
+}
+
+.popup input {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.popup button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.popup button:hover {
+    background: #0056b3;
+}
+
+.popup ul {
+    list-style: none;
+    padding: 0;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.popup li {
+    background: #222;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 6px;
+}
+
+.popup li small {
+    color: #aaa;
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+}
