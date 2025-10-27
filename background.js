@@ -14,6 +14,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ answer: "❗ No API key set." });
         return;
       }
+      const { systemPrompt } = await chrome.storage.local.get("systemPrompt");
+      if (!systemPrompt) {
+        sendResponse({ answer: "❗ No system prompt set." });
+        return;
+      }
 
       async function callOpenAI(model) {
         const resp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -25,7 +30,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           body: JSON.stringify({
             model,
             messages: [
-              { role: "system", content: "You are assisstant." },
+              { role: "system", content: `${systemPrompt}` },
               { role: "user", content: text },
             ],
           }),

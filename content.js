@@ -5,8 +5,8 @@
         const box = document.createElement("div");
         box.id = "chatgpt-selection-box";
         box.style.position = "fixed";
-        box.style.border = "2px dashed #007bff";
-        box.style.backgroundColor = "rgba(0, 191, 255, 0.1)";
+        box.style.border = "1.5px dashed #10a37f"; // ChatGPT green
+        box.style.backgroundColor = "rgba(16, 163, 127, 0.08)";
         box.style.zIndex = "2147483647";
         box.style.pointerEvents = "none";
         box.style.display = "none";
@@ -41,44 +41,52 @@
         const tip = document.createElement("div");
         tip.id = "chatgpt-tooltip";
 
+        // ChatGPT dark style
         tip.style.position = "fixed";
         tip.style.top = y + "px";
         tip.style.left = x + "px";
-        tip.style.width = "450px";
-        tip.style.maxHeight = "300px";
-        tip.style.background = "#1e1e1e";
-        tip.style.color = "#fff";
-        tip.style.border = "2px solid #007bff";
-        tip.style.borderRadius = "8px";
-        tip.style.boxShadow = "0 6px 18px rgba(0,0,0,0.4)";
+        tip.style.width = "480px";
+        tip.style.maxHeight = "400px";
+        tip.style.background = "#343541"; // chatgpt dark gray
+        tip.style.color = "#ececf1";
+        tip.style.border = "1px solid #565869";
+        tip.style.borderRadius = "10px";
+        tip.style.boxShadow = "0 8px 25px rgba(0,0,0,0.5)";
         tip.style.zIndex = "2147483647";
         tip.style.display = "flex";
         tip.style.flexDirection = "column";
         tip.style.overflow = "hidden";
         tip.style.fontSize = "13px";
+        tip.style.fontFamily = `'Inter', 'Segoe UI', sans-serif`;
 
+        // Header bar
         const titleBar = document.createElement("div");
-        titleBar.style.background = "#007bff";
-        titleBar.style.color = "#111";
+        titleBar.style.background = "#40414f";
+        titleBar.style.color = "#d1d5db";
         titleBar.style.padding = "6px 10px";
         titleBar.style.cursor = "move";
         titleBar.style.display = "flex";
         titleBar.style.justifyContent = "space-between";
         titleBar.style.alignItems = "center";
+        titleBar.style.fontWeight = "500";
         titleBar.innerHTML = `<span>ChatGPT Preview</span>`;
 
         const closeBtn = document.createElement("button");
-        closeBtn.innerText = "X";
+        closeBtn.innerText = "×";
         closeBtn.style.background = "transparent";
         closeBtn.style.border = "none";
-        closeBtn.style.color = "#111";
-        closeBtn.style.fontWeight = "bold";
+        closeBtn.style.color = "#d1d5db";
+        closeBtn.style.fontSize = "16px";
         closeBtn.style.cursor = "pointer";
+        closeBtn.style.transition = "color 0.2s";
+        closeBtn.onmouseover = () => (closeBtn.style.color = "#fff");
+        closeBtn.onmouseout = () => (closeBtn.style.color = "#d1d5db");
         closeBtn.onclick = () => tip.remove();
 
         titleBar.appendChild(closeBtn);
         tip.appendChild(titleBar);
 
+        // Content area
         const contentWrapper = document.createElement("div");
         contentWrapper.style.display = "flex";
         contentWrapper.style.flex = "1";
@@ -87,7 +95,7 @@
         const questionDiv = document.createElement("div");
         questionDiv.style.flex = "1";
         questionDiv.style.padding = "10px";
-        questionDiv.style.borderRight = "1px solid #007bff";
+        questionDiv.style.borderRight = "1px solid #565869";
         questionDiv.style.overflowY = "auto";
         questionDiv.style.maxHeight = "calc(100% - 10px)";
         questionDiv.innerText = text || "No text found.";
@@ -97,78 +105,78 @@
         answerDiv.style.padding = "10px";
         answerDiv.style.overflowY = "auto";
         answerDiv.style.maxHeight = "calc(100% - 10px)";
+        answerDiv.style.color = "#c5c5d2";
         answerDiv.innerText = "Answer will appear here...";
 
         contentWrapper.appendChild(questionDiv);
         contentWrapper.appendChild(answerDiv);
         tip.appendChild(contentWrapper);
 
+        // Button
         const button = document.createElement("button");
         button.innerText = "Send to ChatGPT";
-        button.style.margin = "6px 10px 10px 10px";
-        button.style.padding = "6px 10px";
-        button.style.background = "#007bff";
-        button.style.color = "#111";
+        button.style.margin = "10px";
+        button.style.padding = "8px 14px";
+        button.style.background = "#10a37f";
+        button.style.color = "#fff";
         button.style.border = "none";
-        button.style.borderRadius = "4px";
+        button.style.borderRadius = "6px";
         button.style.cursor = "pointer";
+        button.style.fontWeight = "500";
+        button.style.transition = "background 0.2s";
+        button.onmouseover = () => (button.style.background = "#0e8c6f");
+        button.onmouseout = () => (button.style.background = "#10a37f");
 
         button.onclick = () => {
-            answerDiv.innerText = "Loading...";
-            button.disabled = true; // disable immediately
+            answerDiv.innerText = "Thinking...";
+            button.disabled = true;
+            button.style.opacity = "0.6";
 
-            // Use Promise to ensure async response is captured
             chrome.runtime.sendMessage({ action: "askChatGPT", text }, function (response) {
-                // log full response for debugging
-                console.log("Received from background:", response);
-
                 if (response && response.answer) {
                     answerDiv.innerText = response.answer;
                 } else {
                     answerDiv.innerText = "No response from ChatGPT.";
                 }
+                button.disabled = false;
+                button.style.opacity = "1";
             });
         };
 
         tip.appendChild(button);
         document.body.appendChild(tip);
-        let isDragging = false;
-        let offsetX, offsetY;
 
+        // Drag logic
+        let isDragging = false, offsetX, offsetY;
         titleBar.addEventListener("mousedown", (e) => {
             isDragging = true;
             offsetX = e.clientX - tip.getBoundingClientRect().left;
             offsetY = e.clientY - tip.getBoundingClientRect().top;
             e.preventDefault();
         });
-
         document.addEventListener("mousemove", (e) => {
             if (!isDragging) return;
             let left = e.clientX - offsetX;
             let top = e.clientY - offsetY;
-
-            // Keep inside viewport
             left = Math.max(0, Math.min(left, window.innerWidth - tip.offsetWidth));
             top = Math.max(0, Math.min(top, window.innerHeight - tip.offsetHeight));
-
             tip.style.left = left + "px";
             tip.style.top = top + "px";
         });
-
-        document.addEventListener("mouseup", () => {
-            isDragging = false;
-        });
+        document.addEventListener("mouseup", () => { isDragging = false; });
     }
 
-
-
+    // ALT + Drag selection
     document.addEventListener("mousedown", (e) => {
         if (e.altKey && e.button === 0) {
-            e.preventDefault(); isSelecting = true;
-            startX = e.clientX; startY = e.clientY;
+            e.preventDefault();
+            isSelecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
             selectionBox.style.left = startX + "px";
             selectionBox.style.top = startY + "px";
-            selectionBox.style.width = "0px"; selectionBox.style.height = "0px";
+            selectionBox.style.width = "0px";
+            selectionBox.style.height = "0px";
             selectionBox.style.display = "block";
         }
     }, true);
@@ -179,30 +187,30 @@
         endX = e.clientX; endY = e.clientY;
         const left = Math.min(startX, endX), top = Math.min(startY, endY);
         const width = Math.abs(startX - endX), height = Math.abs(startY - endY);
-        selectionBox.style.left = left + "px"; selectionBox.style.top = top + "px";
-        selectionBox.style.width = width + "px"; selectionBox.style.height = height + "px";
+        selectionBox.style.left = left + "px";
+        selectionBox.style.top = top + "px";
+        selectionBox.style.width = width + "px";
+        selectionBox.style.height = height + "px";
     }, true);
 
     document.addEventListener("mouseup", async (e) => {
         if (!isSelecting) return;
-        e.preventDefault(); isSelecting = false; selectionJustEnded = true;
-
+        e.preventDefault();
+        isSelecting = false;
+        selectionJustEnded = true;
         const left = Math.min(startX, endX), top = Math.min(startY, endY);
         const right = Math.max(startX, endX), bottom = Math.max(startY, endY);
-
         const textFromNodes = collectTextInRect(left, top, right, bottom);
-
         const finalText = textFromNodes.trim();
-        console.log("Captured text:", finalText);
-
         selectionBox.style.display = "none";
         showTooltip(e.clientX + 12, e.clientY + 12, finalText);
     }, true);
 
     document.addEventListener("click", (e) => {
         if (selectionJustEnded) {
-            e.preventDefault(); e.stopImmediatePropagation(); selectionJustEnded = false;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            selectionJustEnded = false;
         }
     }, true);
-
 })();
