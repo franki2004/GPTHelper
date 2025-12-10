@@ -193,19 +193,50 @@
         selectionBox.style.height = height + "px";
     }, true);
 
-    document.addEventListener("mouseup", async (e) => {
+    document.addEventListener("mouseup", (e) => {
         if (!isSelecting) return;
         e.preventDefault();
         isSelecting = false;
         selectionJustEnded = true;
-        const left = Math.min(startX, endX), top = Math.min(startY, endY);
-        const right = Math.max(startX, endX), bottom = Math.max(startY, endY);
-        const textFromNodes = collectTextInRect(left, top, right, bottom);
-        const finalText = textFromNodes.trim();
         selectionBox.style.display = "none";
-        showTooltip(e.clientX + 12, e.clientY + 12, finalText);
-    }, true);
 
+        const left = Math.min(startX, endX);
+        const top = Math.min(startY, endY);
+        const right = Math.max(startX, endX);
+        const bottom = Math.max(startY, endY);
+
+        // Extract DOM text within selection
+        const textFromNodes = collectTextInRect(left, top, right, bottom);
+
+        // Ask background to capture screenshot of the visible tab
+        chrome.runtime.sendMessage({ action: "captureArea", rect: { left, top, right, bottom } }, async (resp) => {
+            let ocrText = "";
+
+            // Run OCR only on cropped area
+            if (resp?.dataUrl && window.Tesseract) {
+                try {
+                    // Create an offscreen image to crop
+                    const img = new Image();
+                    img.src = resp.dataUrl;
+                    await img.decode();
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = right - left;
+                    canvas.height = bottom - top;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, left, top, right - left, bottom - top, 0, 0, right - left, bottom - top);
+
+                    const result = await Tesseract.recognize(canvas.toDataURL(), "eng", { logger: () => { } });
+                    ocrText = result.data.text.trim();
+                } catch (err) {
+                    console.warn("OCR failed:", err);
+                }
+            }
+
+            const finalText = [textFromNodes, ocrText].filter(Boolean).join("\n\n");
+            showTooltip(e.clientX + 15, e.clientY + 15, finalText || "No text found");
+        });
+    }, true);
     document.addEventListener("click", (e) => {
         if (selectionJustEnded) {
             e.preventDefault();

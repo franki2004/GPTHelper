@@ -9,7 +9,7 @@
         "storage"
     ],
     "host_permissions": [
-        "https://api.openai.com/*"
+        "<all_urls>"
     ],
     "action": {
         "default_popup": "popup.html",
