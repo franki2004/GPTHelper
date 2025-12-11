@@ -205,38 +205,63 @@
         const right = Math.max(startX, endX);
         const bottom = Math.max(startY, endY);
 
-        // Extract DOM text within selection
         const textFromNodes = collectTextInRect(left, top, right, bottom);
 
-        // Ask background to capture screenshot of the visible tab
-        chrome.runtime.sendMessage({ action: "captureArea", rect: { left, top, right, bottom } }, async (resp) => {
-            let ocrText = "";
+        // If DOM text exists → show immediately, no OCR
+        if (textFromNodes && textFromNodes.trim()) {
+            showTooltip(e.clientX + 15, e.clientY + 15, textFromNodes);
+            return;
+        }
 
-            // Run OCR only on cropped area
-            if (resp?.dataUrl && window.Tesseract) {
-                try {
-                    // Create an offscreen image to crop
-                    const img = new Image();
-                    img.src = resp.dataUrl;
-                    await img.decode();
+        // Otherwise → capture and OCR
+        chrome.runtime.sendMessage(
+            { action: "captureArea", rect: { left, top, right, bottom } },
+            async (resp) => {
+                let ocrText = "";
 
-                    const canvas = document.createElement("canvas");
-                    canvas.width = right - left;
-                    canvas.height = bottom - top;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, left, top, right - left, bottom - top, 0, 0, right - left, bottom - top);
+                if (resp?.dataUrl && window.Tesseract) {
+                    try {
+                        const dpr = window.devicePixelRatio || 1;
+                        const img = new Image();
+                        img.src = resp.dataUrl;
+                        await img.decode();
 
-                    const result = await Tesseract.recognize(canvas.toDataURL(), "eng", { logger: () => { } });
-                    ocrText = result.data.text.trim();
-                } catch (err) {
-                    console.warn("OCR failed:", err);
+                        const cropX = left * dpr;
+                        const cropY = top * dpr;
+                        const cropW = (right - left) * dpr;
+                        const cropH = (bottom - top) * dpr;
+
+                        const canvas = document.createElement("canvas");
+                        canvas.width = cropW;
+                        canvas.height = cropH;
+
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(
+                            img,
+                            cropX, cropY, cropW, cropH,
+                            0, 0, cropW, cropH
+                        );
+
+                        const result = await Tesseract.recognize(
+                            canvas.toDataURL(),
+                            "eng",
+                            { logger: () => { } }
+                        );
+                        ocrText = result.data.text.trim();
+                    } catch (err) {
+                        console.warn("OCR failed:", err);
+                    }
                 }
-            }
 
-            const finalText = [textFromNodes, ocrText].filter(Boolean).join("\n\n");
-            showTooltip(e.clientX + 15, e.clientY + 15, finalText || "No text found");
-        });
+                showTooltip(
+                    e.clientX + 15,
+                    e.clientY + 15,
+                    ocrText || "No text found"
+                );
+            }
+        );
     }, true);
+
     document.addEventListener("click", (e) => {
         if (selectionJustEnded) {
             e.preventDefault();
